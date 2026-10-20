@@ -4,7 +4,7 @@
 
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
 <style>
-/* Layout: ledger-style statement. Slim toolbar on top, one scrollable table with a pinned header row and pinned serial column. */
+/* Layout: centered title, three toolbar rows (actions / search / sort), one scrollable table with pinned header and serial column. */
 :root {
   --bg: #f2f5f6;
   --surface: #ffffff;
@@ -14,20 +14,18 @@
   --zebra: #f1f5f6;
   --accent: #0f4c5c;
   --accent-fg: #ffffff;
-  --accent-soft: #dcebee;
-  --warn: #8a4b08;
   --font: "IBM Plex Sans Arabic", Tahoma, "Segoe UI", sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0f1a1d; --surface: #162428; --fg: #e4eced; --muted: #93a8ad; --line: #2b3f44;
-    --zebra: #1a2b30; --accent: #5fb4c7; --accent-fg: #07222a; --accent-soft: #1f3a41; --warn: #f0b36a;
+    --zebra: #1a2b30; --accent: #5fb4c7; --accent-fg: #07222a;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0f1a1d; --surface: #162428; --fg: #e4eced; --muted: #93a8ad; --line: #2b3f44;
-  --zebra: #1a2b30; --accent: #5fb4c7; --accent-fg: #07222a; --accent-soft: #1f3a41; --warn: #f0b36a;
+  --zebra: #1a2b30; --accent: #5fb4c7; --accent-fg: #07222a;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -39,25 +37,24 @@ body {
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
-.wrap { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
-h1 { margin: 0; font-size: 1.5rem; font-weight: 600; text-wrap: balance; }
-.src { color: var(--muted); font-size: .85rem; direction: ltr; text-align: right; overflow-wrap: anywhere; min-width: 0; }
-.src b { font-weight: 500; }
-.bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+.wrap { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+h1 { margin: 0; font-size: 1.5rem; font-weight: 600; text-align: center; text-wrap: balance; }
+.row { display: flex; gap: 8px; align-items: stretch; }
 .btn, select, input[type="search"] {
   font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line);
   border-radius: 8px; min-height: 44px; padding: 0 14px;
 }
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; white-space: nowrap; }
+.btn { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; white-space: nowrap; }
+.actions .btn { flex: 1 1 0; min-width: 0; padding: 0 6px; }
 .btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 600; }
+.btn:disabled { opacity: .5; cursor: default; }
 .btn:focus-visible, select:focus-visible, input:focus-visible, th button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-input[type="search"] { flex: 1 1 180px; min-width: 0; }
-select { flex: 0 1 auto; min-width: 0; }
-.stats { display: flex; flex-wrap: wrap; gap: 6px 22px; color: var(--muted); font-size: .92rem; }
+input[type="search"] { flex: 1 1 auto; min-width: 0; }
+.sortrow label { align-self: center; color: var(--muted); white-space: nowrap; }
+.sortrow select { flex: 1 1 auto; min-width: 0; }
+.sortrow .btn { flex: 0 0 auto; min-width: 84px; }
+.stats { color: var(--muted); font-size: .92rem; }
 .stats b { color: var(--fg); font-weight: 600; font-variant-numeric: tabular-nums; }
-.drop { border: 1.5px dashed var(--line); border-radius: 8px; padding: 10px 14px; color: var(--muted); font-size: .9rem; }
-body.dragging .drop { border-color: var(--accent); background: var(--accent-soft); color: var(--fg); }
 .tablebox { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: auto; max-height: 68vh; }
 table { border-collapse: separate; border-spacing: 0; width: 100%; font-variant-numeric: tabular-nums; }
 th, td { padding: 10px 14px; text-align: center; white-space: nowrap; border-bottom: 1px solid var(--line); }
@@ -70,34 +67,35 @@ tbody tr:nth-child(even) td { background: var(--zebra); }
 tbody td { background: var(--surface); }
 .pin { position: sticky; right: 0; z-index: 1; border-left: 1px solid var(--line); color: var(--muted); }
 thead th.pin { z-index: 3; color: var(--accent-fg); }
-td.neg { color: var(--warn); }
-.empty { padding: 28px; text-align: center; color: var(--muted); }
+.empty { padding: 32px 16px; text-align: center; color: var(--muted); white-space: normal; }
 .toast { position: fixed; inset-inline: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); margin: 0 auto; max-width: 420px; background: var(--fg); color: var(--bg); padding: 12px 16px; border-radius: 8px; text-align: center; z-index: 30; }
 .overlay { position: fixed; inset: 0; z-index: 20; background: rgba(8, 18, 21, .82); display: flex; flex-direction: column; gap: 10px; align-items: center; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
 .overlay p { color: #fff; margin: 0; text-align: center; }
 .overlay .scroller { overflow: auto; flex: 1; min-height: 0; max-width: 100%; background: #fff; border-radius: 8px; }
 .overlay img { display: block; max-width: none; width: 1000px; }
-@media (max-width: 600px) { .overlay img { width: 900px; } }
 html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 </style>
 </head><body>
 
 
 <div class="wrap" lang="ar">
-  <header>
-    <h1>كشف المحفظة</h1>
-    <div class="src">الملف: <b id="srcName">—</b></div>
-  </header>
+  <h1>كشف المحفظة</h1>
 
-  <div class="drop" id="drop">اسحب ملف CSV وأفلته هنا، أو اضغط «فتح ملف». الصفوف المعروضة مثال من الملف المرفق إلى أن تفتح ملفك.</div>
-
-  <div class="bar">
+  <div class="row actions">
     <label class="btn primary" for="file">فتح ملف</label>
     <input id="file" type="file" accept=".csv,.txt,text/csv" hidden>
-    <input id="q" type="search" placeholder="بحث في الجدول" aria-label="بحث في الجدول">
-    <select id="sortKey" aria-label="الترتيب حسب"></select>
-    <button class="btn" id="dir" type="button" aria-label="اتجاه الترتيب">تصاعدي</button>
-    <button class="btn primary" id="save" type="button">حفظ كصورة</button>
+    <button class="btn" id="saveImg" type="button">حفظ صورة</button>
+    <button class="btn" id="savePdf" type="button">حفظ PDF</button>
+  </div>
+
+  <div class="row">
+    <input id="q" type="search" placeholder="بحث" aria-label="بحث في الجدول">
+  </div>
+
+  <div class="row sortrow">
+    <label for="sortKey">الترتيب حسب</label>
+    <select id="sortKey"></select>
+    <button class="btn" id="dir" type="button" aria-label="اتجاه الترتيب">تنازلي</button>
   </div>
 
   <div class="stats" id="stats" aria-live="polite"></div>
@@ -114,59 +112,37 @@ html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset
   <button class="btn primary" id="ovClose" type="button">إغلاق</button>
 </div>
 
+<script src="native.js"></script>
 <script>
 (function () {
   "use strict";
 
-  var SAMPLE_NAME = "partner-wallet-transactions__1792530428.csv";
-  var SAMPLE_CSV = `,عملة,المقدار,الرصيد,رقم المعاملة,التاريخ,الاشتراك,بطاقة تعريف,رمز الاشتراك,النوع,الرقم التسلسلي,المشترك,معرف المشترك,الوكيل,المنطقة,اسم الاشتراك,نوع الاشتراك,تاريخ البدء,تاريخ الانتهاء,نوع الدفع,نوع الخصم,مقدار الخصم,مالك المحفظة,نوع المحفظة,تم الإنشاء بواسطة
--,دينار,"15,000.00","495,000.00",103022,20 تشرين الأول 2026 23:34:50,BASIC,2000001328,,شراء اشتراك,,,912919,x,FNS0471-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
--,دينار,"15,000.00","510,000.00",99340,20 تشرين الأول 2026 22:59:52,BASIC,2000001281,,شراء اشتراك,,,3528170,x,FNS0471-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
--,دينار,"15,000.00","525,000.00",96592,20 تشرين الأول 2026 22:39:04,BASIC,2000001246,,شراء اشتراك,,,3527976,x,FNS0471-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
--,دينار,"15,000.00","540,000.00",93712,20 تشرين الأول 2026 22:16:58,BASIC,2000001201,,شراء اشتراك,,,3528118,x,FNS0471-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
--,دينار,"15,000.00","555,000.00",87872,20 تشرين الأول 2026 21:41:54,BASIC,2000001113,,شراء اشتراك,,,3528069,x,FNS0472-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
--,دينار,"15,000.00","570,000.00",84700,20 تشرين الأول 2026 21:24:21,BASIC,2000001080,,شراء اشتراك,,,560798,x,FNS0471-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
--,دينار,"15,000.00","585,000.00",82204,20 تشرين الأول 2026 21:10:55,BASIC,2000001019,,شراء اشتراك,,,3527582,x,FNS0471-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
--,دينار,"15,000.00","600,000.00",72512,20 تشرين الأول 2026 20:20:57,BASIC,2000000895,,شراء اشتراك,,,740049,x,FNS0471-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
--,دينار,"15,000.00","615,000.00",71526,20 تشرين الأول 2026 20:15:34,BASIC,2000000884,,شراء اشتراك,,,3527902,x,FNS0471-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
--,دينار,"15,000.00","630,000.00",58106,20 تشرين الأول 2026 19:09:10,BASIC,2000000633,,شراء اشتراك,,,3527553,x,FNS0471-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
--,دينار,"15,000.00","645,000.00",57866,20 تشرين الأول 2026 19:08:10,BASIC,2000000678,,شراء اشتراك,,,3527548,x,FNS0471-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
--,دينار,"15,000.00","660,000.00",53558,20 تشرين الأول 2026 18:46:37,BASIC,2000000600,,شراء اشتراك,,,3527652,x,FNS0471-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
--,دينار,"15,000.00","675,000.00",37878,20 تشرين الأول 2026 17:19:31,BASIC,2000000353,,شراء اشتراك,,,3527372,x,FNS0472-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
--,دينار,"15,000.00","690,000.00",34798,20 تشرين الأول 2026 16:59:13,BASIC,2000000324,,شراء اشتراك,,,542203,x,FNS0472-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
--,دينار,"15,000.00","705,000.00",31906,20 تشرين الأول 2026 16:37:49,BASIC,2000000172,,شراء اشتراك,,,592015,x,FNS0472-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
--,دينار,"15,000.00","720,000.00",31806,20 تشرين الأول 2026 16:36:56,BASIC,2000000215,,شراء اشتراك,,,3527241,x,FNS0472-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
--,دينار,"15,000.00","735,000.00",29724,20 تشرين الأول 2026 16:18:53,BASIC,2000000176,,شراء اشتراك,,,3527220,x,FNS0472-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
--,دينار,"15,000.00","750,000.00",28614,20 تشرين الأول 2026 16:08:27,BASIC,2000000179,,شراء اشتراك,,,3527196,x,FNS0472-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
--,دينار,"15,000.00","765,000.00",27742,20 تشرين الأول 2026 15:59:19,BASIC,2000000170,,شراء اشتراك,,,3527212,x,FNS0472-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
--,دينار,"15,000.00","780,000.00",27388,20 تشرين الأول 2026 15:55:13,BASIC,2000000174,,شراء اشتراك,,,544525,x,FNS0472-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
--,دينار,"15,000.00","795,000.00",23950,20 تشرين الأول 2026 15:13:50,BASIC,2000000162,,شراء اشتراك,,,752479,x,FNS0472-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
--,دينار,"15,000.00","810,000.00",5996,20 تشرين الأول 2026 10:45:16,BASIC,2000000023,,شراء اشتراك,,,3527062,x,FNS0471-2,BASIC,BASE_PLAN,20/10/2026,19/11/2026,Wallet,FLAT,20000,محفظة الوكيل,الرئيسي,x
-,,,,,,,,,,,,,,,,,,,,,,,-,دينار,"35,000.00",0,2944,20 تشرين الأول 2026 09:13:18,PLUS,14990836,fd472fa30ahd,تجديد الاشتراك,,x,3507410,x,FNS0472-2,PLUS,BASE_PLAN,03/11/2026,03/12/2026,Card,FLAT,10000,محفظة الوكيل,الرئيسي,1838865`;
-
   // type: serial | money | id | dt (timestamp text) | d (dd/mm/yyyy) | text
+  // screen: shown in the on-screen table. Every column goes into the saved image and PDF.
   var COLS = [
-    { key: "#", label: "التسلسل", type: "serial" },
-    { key: "المقدار", label: "المقدار", type: "money" },
-    { key: "الرصيد", label: "الرصيد", type: "money" },
-    { key: "التاريخ", label: "التاريخ", type: "dt" },
-    { key: "الاشتراك", label: "الاشتراك", type: "text" },
-    { key: "بطاقة تعريف", label: "بطاقة تعريف", type: "id" },
-    { key: "معرف المشترك", label: "معرف المشترك", type: "id" },
-    { key: "المنطقة", label: "المنطقة", type: "text" },
-    { key: "اسم الاشتراك", label: "اسم الاشتراك", type: "text" },
-    { key: "تاريخ البدء", label: "تاريخ البدء", type: "d" },
-    { key: "تاريخ الانتهاء", label: "تاريخ الانتهاء", type: "d" },
-    { key: "نوع الدفع", label: "نوع الدفع", type: "text" },
-    { key: "مقدار الخصم", label: "مقدار الخصم", type: "money" }
+    { key: "#", label: "التسلسل", type: "serial", screen: true },
+    { key: "المقدار", label: "المقدار", type: "money", screen: false },
+    { key: "الرصيد", label: "الرصيد", type: "money", screen: false },
+    { key: "التاريخ", label: "التاريخ", type: "dt", screen: true },
+    { key: "الاشتراك", label: "الاشتراك", type: "text", screen: true },
+    { key: "بطاقة تعريف", label: "بطاقة تعريف", type: "id", screen: false },
+    { key: "معرف المشترك", label: "معرف المشترك", type: "id", screen: true },
+    { key: "المنطقة", label: "المنطقة", type: "text", screen: true },
+    { key: "اسم الاشتراك", label: "اسم الاشتراك", type: "text", screen: false },
+    { key: "تاريخ البدء", label: "تاريخ البدء", type: "d", screen: false },
+    { key: "تاريخ الانتهاء", label: "تاريخ الانتهاء", type: "d", screen: false },
+    { key: "نوع الدفع", label: "نوع الدفع", type: "text", screen: true },
+    { key: "مقدار الخصم", label: "مقدار الخصم", type: "money", screen: false }
   ];
+  var SCREEN = COLS.filter(function (c) { return c.screen; });
 
   var MONTHS = {
     "كانون الثاني": 1, "شباط": 2, "اذار": 3, "نيسان": 4, "ايار": 5, "حزيران": 6,
     "تموز": 7, "اب": 8, "ايلول": 9, "تشرين الاول": 10, "تشرين الثاني": 11, "كانون الاول": 12
   };
+  var DT_RE = /(\d{1,2})\s+(.+?)\s+(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/;
 
-  var state = { rows: [], name: "", sortKey: "التاريخ", dir: -1, q: "" };
+  var state = { rows: [], sortKey: "التاريخ", dir: -1, q: "" };
   var dlNS = null;
 
   var $ = function (id) { return document.getElementById(id); };
@@ -195,7 +171,7 @@ html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset
     return rows;
   }
 
-  function loadText(text, name) {
+  function loadText(text) {
     var all = parseCSV(text);
     if (all.length < 2) { toast("الملف فارغ أو لا يحتوي صفوفاً."); return false; }
     var idx = {};
@@ -223,7 +199,6 @@ html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset
     });
     if (!rows.length) { toast("لم أجد صفوف بيانات في الملف."); return false; }
     state.rows = rows;
-    state.name = name;
     render();
     return true;
   }
@@ -239,8 +214,9 @@ html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset
     return n.toLocaleString("en-US", { maximumFractionDigits: 2 });
   }
   function norm(s) { return s.replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/\s+/g, " ").trim(); }
+  function pad2(n) { n = String(n); return n.length < 2 ? "0" + n : n; }
   function parseDT(s) {
-    var m = /(\d{1,2})\s+(.+?)\s+(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/.exec(s);
+    var m = DT_RE.exec(s);
     if (m) {
       var mon = MONTHS[norm(m[2])];
       if (mon) return Date.UTC(+m[3], mon - 1, +m[1], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
@@ -252,9 +228,24 @@ html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset
     var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s.trim());
     return m ? Date.UTC(+m[3], +m[2] - 1, +m[1]) : parseDT(s);
   }
+  // "20 تشرين الأول 2026 23:34:50" -> "20/10/2026 11:34:50 م"
+  function fmtDT(s) {
+    var m = DT_RE.exec(s);
+    var mon = m && MONTHS[norm(m[2])];
+    if (!mon) return s;
+    var out = pad2(m[1]) + "/" + pad2(mon) + "/" + m[3];
+    if (m[4] !== undefined) {
+      var h = +m[4], ap = h >= 12 ? "م" : "ص";
+      h = h % 12 || 12;
+      out += " " + h + ":" + m[5] + (m[6] !== undefined ? ":" + m[6] : "") + " " + ap;
+    }
+    return out;
+  }
   function cellText(c, v) {
+    if (v === "" || v === undefined) return "—";
     if (c.type === "money") return fmtMoney(v);
-    return v === "" ? "—" : v;
+    if (c.type === "dt") return fmtDT(v);
+    return v;
   }
   function sortVal(c, v) {
     if (c.type === "money" || c.type === "id") return num(v);
@@ -301,7 +292,7 @@ html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset
     var thead = $("thead");
     thead.textContent = "";
     var tr = el("tr");
-    COLS.forEach(function (c) {
+    SCREEN.forEach(function (c) {
       var th = el("th");
       th.scope = "col";
       if (c.type === "serial") {
@@ -323,35 +314,33 @@ html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset
   }
 
   function render() {
-    var list = currentView();
+    var has = state.rows.length > 0;
+    var list = has ? currentView() : [];
     buildHead();
     var tbody = $("tbody");
     tbody.textContent = "";
     if (!list.length) {
-      var tr0 = el("tr"), td0 = el("td", "empty", "لا توجد صفوف مطابقة.");
-      td0.colSpan = COLS.length;
+      var tr0 = el("tr"), td0 = el("td", "empty", has ? "لا توجد صفوف مطابقة." : "لا توجد بيانات. اضغط «فتح ملف» واختر ملف المعاملات (CSV).");
+      td0.colSpan = SCREEN.length;
       tr0.appendChild(td0); tbody.appendChild(tr0);
     }
     var frag = document.createDocumentFragment();
     list.forEach(function (r, n) {
       var tr = el("tr");
-      COLS.forEach(function (c) {
-        var td = el("td", c.type === "serial" ? "pin" : "", c.type === "serial" ? String(n + 1) : cellText(c, r[c.key]));
-        tr.appendChild(td);
+      SCREEN.forEach(function (c) {
+        tr.appendChild(el("td", c.type === "serial" ? "pin" : "", c.type === "serial" ? String(n + 1) : cellText(c, r[c.key])));
       });
       frag.appendChild(tr);
     });
     tbody.appendChild(frag);
-    $("srcName").textContent = state.name;
-    var total = list.reduce(function (s, r) { return s + (num(r["المقدار"]) || 0); }, 0);
     var st = $("stats");
     st.textContent = "";
-    [["عدد المعاملات", list.length + (list.length !== state.rows.length ? " من " + state.rows.length : "")],
-     ["مجموع المقدار", fmtMoney(String(total)) + " دينار"]].forEach(function (p) {
-      var s = el("span", "", p[0] + ": ");
-      s.appendChild(el("b", "", p[1]));
-      st.appendChild(s);
-    });
+    if (has) {
+      st.appendChild(document.createTextNode("عدد المعاملات: "));
+      st.appendChild(el("b", "", list.length + (list.length !== state.rows.length ? " من " + state.rows.length : "")));
+    }
+    $("saveImg").disabled = !has;
+    $("savePdf").disabled = !has;
   }
 
   function syncControls() {
@@ -368,25 +357,34 @@ html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset
     toastTimer = setTimeout(function () { t.hidden = true; }, 4200);
   }
 
-  /* ---------- export as image ---------- */
-  function buildCanvas(list) {
-    var FONT = '"IBM Plex Sans Arabic", Tahoma, sans-serif';
+  /* ---------- drawing the saved image / PDF pages (all columns) ---------- */
+  var FONT = '"IBM Plex Sans Arabic", Tahoma, sans-serif';
+  var DIM = { padX: 24, titleH: 70, headH: 46, rowH: 40, footH: 50, cellPad: 30 };
+
+  function measure(list) {
     var mctx = document.createElement("canvas").getContext("2d");
-    var padX = 24, titleH = 70, headH = 46, rowH = 40, footH = 50, cellPad = 30;
-    var texts = function (c, r, n) { return c.type === "serial" ? String(n + 1) : cellText(c, r[c.key]); };
-    var widths = COLS.map(function (c) {
+    return COLS.map(function (c) {
       mctx.font = "600 15px " + FONT;
       var w = mctx.measureText(c.label).width;
       mctx.font = "400 15px " + FONT;
-      list.forEach(function (r, n) { w = Math.max(w, mctx.measureText(texts(c, r, n)).width); });
-      return Math.ceil(w + cellPad);
+      list.forEach(function (r, n) {
+        var t = c.type === "serial" ? String(n + 1) : cellText(c, r[c.key]);
+        w = Math.max(w, mctx.measureText(t).width);
+      });
+      return Math.ceil(w + DIM.cellPad);
     });
+  }
+
+  // o: { offset, footer, total, count, sortText, pageText }
+  function buildCanvas(rows, widths, o) {
+    var D = DIM;
     var tableW = widths.reduce(function (a, b) { return a + b; }, 0);
-    var W = Math.max(tableW + padX * 2, 720);
-    var H = titleH + headH + rowH * list.length + footH + padX;
+    var W = Math.max(tableW + D.padX * 2, 720);
+    var H = D.titleH + D.headH + D.rowH * rows.length + (o.footer ? D.footH : 0) + D.padX;
     var S = Math.min(2, 16000 / H);
     var cv = document.createElement("canvas");
     cv.width = Math.round(W * S); cv.height = Math.round(H * S);
+    cv._w = W; cv._h = H;
     var g = cv.getContext("2d");
     g.scale(S, S);
     g.direction = "rtl"; g.textBaseline = "middle";
@@ -394,87 +392,151 @@ html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset
     g.fillStyle = "#ffffff"; g.fillRect(0, 0, W, H);
 
     g.textAlign = "right"; g.fillStyle = INK; g.font = "600 24px " + FONT;
-    g.fillText("كشف المحفظة", W - padX, 28);
+    g.fillText("كشف المحفظة", W - D.padX, 28);
     g.fillStyle = MUTED; g.font = "400 14px " + FONT;
-    var sortCol = COLS.filter(function (c) { return c.key === state.sortKey; })[0];
-    g.fillText("عدد المعاملات: " + list.length + "   |   الترتيب: " + (sortCol ? sortCol.label : "") + (state.dir === 1 ? " تصاعدي" : " تنازلي"), W - padX, 54);
+    g.fillText("عدد المعاملات: " + o.count + "   |   الترتيب: " + o.sortText, W - D.padX, 54);
+    if (o.pageText) { g.textAlign = "left"; g.direction = "ltr"; g.fillText(o.pageText, D.padX, 28); g.direction = "rtl"; g.textAlign = "right"; }
 
-    var x0 = W - padX, y = titleH;
+    var x0 = W - D.padX, y = D.titleH;
     function colX(i) { var x = x0; for (var k = 0; k < i; k++) x -= widths[k]; return x; }
-    g.fillStyle = HEAD; g.fillRect(padX, y, W - padX * 2, headH);
+    g.fillStyle = HEAD; g.fillRect(D.padX, y, W - D.padX * 2, D.headH);
     g.textAlign = "center"; g.fillStyle = "#ffffff"; g.font = "600 15px " + FONT;
-    COLS.forEach(function (c, i) { g.fillText(c.label, colX(i) - widths[i] / 2, y + headH / 2 + 1); });
-    y += headH;
+    COLS.forEach(function (c, i) { g.fillText(c.label, colX(i) - widths[i] / 2, y + D.headH / 2 + 1); });
+    y += D.headH;
 
     g.font = "400 15px " + FONT;
-    list.forEach(function (r, n) {
-      if (n % 2 === 1) { g.fillStyle = ZEB; g.fillRect(padX, y, W - padX * 2, rowH); }
+    rows.forEach(function (r, n) {
+      if (n % 2 === 1) { g.fillStyle = ZEB; g.fillRect(D.padX, y, W - D.padX * 2, D.rowH); }
       g.fillStyle = INK;
-      COLS.forEach(function (c, i) { g.fillText(texts(c, r, n), colX(i) - widths[i] / 2, y + rowH / 2 + 1); });
-      g.fillStyle = LINE; g.fillRect(padX, y + rowH - 1, W - padX * 2, 1);
-      y += rowH;
+      COLS.forEach(function (c, i) {
+        var t = c.type === "serial" ? String(o.offset + n + 1) : cellText(c, r[c.key]);
+        g.fillText(t, colX(i) - widths[i] / 2, y + D.rowH / 2 + 1);
+      });
+      g.fillStyle = LINE; g.fillRect(D.padX, y + D.rowH - 1, W - D.padX * 2, 1);
+      y += D.rowH;
     });
 
-    var total = list.reduce(function (s, r) { return s + (num(r["المقدار"]) || 0); }, 0);
-    g.textAlign = "right"; g.fillStyle = INK; g.font = "600 16px " + FONT;
-    g.fillText("مجموع المقدار: " + fmtMoney(String(total)) + " دينار", W - padX, y + footH / 2);
-    g.textAlign = "left"; g.direction = "ltr"; g.fillStyle = MUTED; g.font = "400 13px " + FONT;
-    g.fillText(new Date().toLocaleString("en-GB"), padX, y + footH / 2);
+    if (o.footer) {
+      g.textAlign = "right"; g.fillStyle = INK; g.font = "600 16px " + FONT;
+      g.fillText("مجموع المقدار: " + fmtMoney(String(o.total)) + " دينار", W - D.padX, y + D.footH / 2);
+      g.textAlign = "left"; g.direction = "ltr"; g.fillStyle = MUTED; g.font = "400 13px " + FONT;
+      g.fillText(new Date().toLocaleString("en-GB"), D.padX, y + D.footH / 2);
+    }
     return cv;
   }
 
-  function stamp() {
-    var d = new Date(), p = function (n) { return String(n).padStart(2, "0"); };
-    return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "-" + p(d.getHours()) + p(d.getMinutes());
+  function exportInfo(list) {
+    var col = COLS.filter(function (c) { return c.key === state.sortKey; })[0];
+    return {
+      count: list.length,
+      total: list.reduce(function (s, r) { return s + (num(r["المقدار"]) || 0); }, 0),
+      sortText: (col ? col.label : "") + (state.dir === 1 ? " تصاعدي" : " تنازلي")
+    };
   }
 
+  function loadFonts() {
+    return document.fonts && document.fonts.load
+      ? Promise.all([document.fonts.load('400 15px "IBM Plex Sans Arabic"'), document.fonts.load('600 15px "IBM Plex Sans Arabic"')]).catch(function () {})
+      : Promise.resolve();
+  }
+
+  /* ---------- minimal PDF writer (one JPEG per page) ---------- */
+  function dataUrlToBytes(u) {
+    var bin = atob(u.split(",")[1]), a = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+    return a;
+  }
+  function makePdf(pages) {
+    var enc = new TextEncoder(), parts = [], offsets = [], len = 0;
+    function push(x) { var b = typeof x === "string" ? enc.encode(x) : x; parts.push(b); len += b.length; }
+    function obj(n, body) { offsets[n] = len; push(n + " 0 obj\n" + body + "\nendobj\n"); }
+    push("%PDF-1.4\n");
+    obj(1, "<< /Type /Catalog /Pages 2 0 R >>");
+    obj(2, "<< /Type /Pages /Kids [" + pages.map(function (_, i) { return (3 + i * 3) + " 0 R"; }).join(" ") + "] /Count " + pages.length + " >>");
+    pages.forEach(function (p, i) {
+      var n = 3 + i * 3;
+      obj(n, "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + p.pw + " " + p.ph + "] /Resources << /XObject << /Im0 " + (n + 2) + " 0 R >> >> /Contents " + (n + 1) + " 0 R >>");
+      var content = "q " + p.pw + " 0 0 " + p.ph + " 0 0 cm /Im0 Do Q";
+      obj(n + 1, "<< /Length " + content.length + " >>\nstream\n" + content + "\nendstream");
+      offsets[n + 2] = len;
+      push((n + 2) + " 0 obj\n<< /Type /XObject /Subtype /Image /Width " + p.w + " /Height " + p.h + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + p.jpeg.length + " >>\nstream\n");
+      push(p.jpeg);
+      push("\nendstream\nendobj\n");
+    });
+    var count = 3 + pages.length * 3, xref = len, x = "xref\n0 " + count + "\n0000000000 65535 f \n";
+    for (var k = 1; k < count; k++) x += String(offsets[k]).padStart(10, "0") + " 00000 n \n";
+    push(x + "trailer\n<< /Size " + count + " /Root 1 0 R >>\nstartxref\n" + xref + "\n%%EOF");
+    return new Blob(parts, { type: "application/pdf" });
+  }
+
+  /* ---------- saving ---------- */
+  function stamp() {
+    var d = new Date();
+    return d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + "-" + pad2(d.getHours()) + pad2(d.getMinutes());
+  }
   function isNative() {
     return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   }
-
-  var NP = null;
-  function nativePlugins() {
-    if (!NP) NP = { fs: window.Capacitor.registerPlugin("Filesystem"), share: window.Capacitor.registerPlugin("Share") };
-    return NP;
+  function blobToBase64(blob) {
+    return new Promise(function (res, rej) {
+      var fr = new FileReader();
+      fr.onload = function () { res(String(fr.result).split(",")[1]); };
+      fr.onerror = function () { rej(fr.error); };
+      fr.readAsDataURL(blob);
+    });
+  }
+  function deliver(blob, filename, previewCv) {
+    if (isNative()) {
+      if (!window.NativeSave) { toast("أدوات الحفظ غير محمّلة. أعد تثبيت التطبيق."); return; }
+      blobToBase64(blob).then(function (b64) { return window.NativeSave(b64, filename); }).then(function () {}, function (e) {
+        var m = String((e && e.message) || e || "");
+        if (/cancel/i.test(m)) return;
+        toast("تعذّر الحفظ: " + m.slice(0, 80));
+      });
+      return;
+    }
+    if (dlNS) {
+      dlNS.save({ filename: filename, data: blob }).then(function () { toast("تم الحفظ."); }, function (e) {
+        if (e && e.code === "declined") return;
+        if (previewCv) showOverlay(previewCv); else toast("تعذّر الحفظ هنا.");
+      });
+      return;
+    }
+    if (previewCv) showOverlay(previewCv); else toast("الحفظ غير متاح في هذا المتصفح.");
   }
 
   function saveImage() {
     var list = currentView();
     if (!list.length) { toast("لا توجد صفوف لحفظها."); return; }
-    var fonts = document.fonts && document.fonts.load
-      ? Promise.all([document.fonts.load('400 15px "IBM Plex Sans Arabic"'), document.fonts.load('600 15px "IBM Plex Sans Arabic"')]).catch(function () {})
-      : Promise.resolve();
-    fonts.then(function () {
+    if (list.length > 300) toast("عدد الصفوف كبير، يفضّل حفظ PDF لوضوح أفضل.");
+    loadFonts().then(function () {
       var cv;
-      try { cv = buildCanvas(list); } catch (e) { toast("تعذّر إنشاء الصورة: " + String((e && e.message) || e).slice(0, 80)); return; }
-      if (isNative()) { nativeSave(cv); return; }
+      try { cv = buildCanvas(list, measure(list), Object.assign({ offset: 0, footer: true }, exportInfo(list))); }
+      catch (e) { toast("تعذّر إنشاء الصورة."); return; }
       cv.toBlob(function (blob) {
-        if (!blob) { showOverlay(cv); return; }
-        if (dlNS) {
-          dlNS.save({ filename: "wallet-statement-" + stamp() + ".png", data: blob }).then(function () {
-            toast("تم حفظ الصورة.");
-          }, function (e) {
-            if (e && e.code === "declined") return;
-            showOverlay(cv);
-          });
-        } else { showOverlay(cv); }
+        if (!blob) { toast("تعذّر إنشاء الصورة."); return; }
+        deliver(blob, "wallet-statement-" + stamp() + ".png", cv);
       }, "image/png");
     });
   }
 
-  function nativeSave(cv) {
-    var data;
-    try { data = cv.toDataURL("image/png"); } catch (e) { toast("تعذّر إنشاء الصورة."); return; }
-    var name = "wallet-statement-" + stamp() + ".png";
-    var P;
-    try { P = nativePlugins(); } catch (e) { toast("تعذّر تحميل أدوات الحفظ."); showOverlay(cv); return; }
-    P.fs.writeFile({ path: name, data: data.split(",")[1], directory: "CACHE" }).then(function (r) {
-      return P.share.share({ title: "كشف المحفظة", url: r.uri, dialogTitle: "حفظ أو مشاركة الصورة" });
-    }).then(function () {}, function (e) {
-      var msg = String((e && e.message) || e || "");
-      if (/cancel/i.test(msg)) return;
-      toast("تعذّر فتح المشاركة: " + msg.slice(0, 80));
-      showOverlay(cv);
+  function savePdf() {
+    var list = currentView();
+    if (!list.length) { toast("لا توجد صفوف لحفظها."); return; }
+    loadFonts().then(function () {
+      var widths = measure(list), info = exportInfo(list), PER = 30, n = Math.ceil(list.length / PER), pages = [];
+      try {
+        for (var i = 0; i < n; i++) {
+          var cv = buildCanvas(list.slice(i * PER, (i + 1) * PER), widths,
+            Object.assign({ offset: i * PER, footer: i === n - 1, pageText: n > 1 ? "صفحة " + (i + 1) + " من " + n : "" }, info));
+          pages.push({
+            jpeg: dataUrlToBytes(cv.toDataURL("image/jpeg", 0.92)),
+            w: cv.width, h: cv.height,
+            pw: Math.round(cv._w * 0.75), ph: Math.round(cv._h * 0.75)
+          });
+        }
+        deliver(makePdf(pages), "wallet-statement-" + stamp() + ".pdf", null);
+      } catch (e) { toast("تعذّر إنشاء ملف PDF."); }
     });
   }
 
@@ -487,38 +549,34 @@ html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset
   function readFile(f) {
     if (!f) return;
     var fr = new FileReader();
-    fr.onload = function () { loadText(String(fr.result), f.name); };
+    fr.onload = function () { loadText(String(fr.result)); };
     fr.onerror = function () { toast("تعذّر قراءة الملف."); };
     fr.readAsText(f, "utf-8");
   }
 
   $("file").addEventListener("change", function (e) { readFile(e.target.files[0]); e.target.value = ""; });
   $("q").addEventListener("input", function (e) { state.q = e.target.value; render(); });
-  $("sortKey").addEventListener("change", function (e) { state.sortKey = e.target.value; render(); syncControls(); });
+  $("sortKey").addEventListener("change", function (e) { state.sortKey = e.target.value; syncControls(); render(); });
   $("dir").addEventListener("click", function () { state.dir = -state.dir; syncControls(); render(); });
-  $("save").addEventListener("click", saveImage);
+  $("saveImg").addEventListener("click", saveImage);
+  $("savePdf").addEventListener("click", savePdf);
   $("ovClose").addEventListener("click", function () { $("overlay").hidden = true; });
 
-  ["dragenter", "dragover"].forEach(function (ev) {
-    document.addEventListener(ev, function (e) { e.preventDefault(); document.body.classList.add("dragging"); });
-  });
-  ["dragleave", "drop"].forEach(function (ev) {
-    document.addEventListener(ev, function (e) {
-      e.preventDefault();
-      if (ev === "drop" || e.target === document.documentElement) document.body.classList.remove("dragging");
-      if (ev === "drop" && e.dataTransfer && e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]);
-    });
+  document.addEventListener("dragover", function (e) { e.preventDefault(); });
+  document.addEventListener("drop", function (e) {
+    e.preventDefault();
+    if (e.dataTransfer && e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]);
   });
 
-  /* ---------- start ---------- */
+  /* ---------- start (no data until a file is opened) ---------- */
   var sel = $("sortKey");
   COLS.forEach(function (c) {
     if (c.type === "serial") return;
-    var o = el("option", "", "ترتيب: " + c.label);
+    var o = el("option", "", c.label);
     o.value = c.key; sel.appendChild(o);
   });
   syncControls();
-  loadText(SAMPLE_CSV, SAMPLE_NAME + " (مثال)");
+  render();
 
   try {
     if (window.claude && window.claude.use) {
