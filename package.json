@@ -1,13 +1,19 @@
 {
   "name": "wallet-statement",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "كشف المحفظة",
+  "scripts": {
+    "postinstall": "esbuild native-src.js --bundle --minify --format=iife --outfile=www/native.js"
+  },
   "dependencies": {
     "@capacitor/android": "^7.0.0",
     "@capacitor/cli": "^7.0.0",
     "@capacitor/core": "^7.0.0",
     "@capacitor/filesystem": "^7.0.0",
     "@capacitor/share": "^7.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
   }
 }
